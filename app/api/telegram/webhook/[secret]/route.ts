@@ -203,7 +203,10 @@ async function handleStats(
     .eq("telegram_chat_id", chatId)
     .maybeSingle();
 
-  if (!settings) return;
+  if (!settings) {
+    await logOps("info", "webhook", "/stats from unlinked chat", { chatId });
+    return;
+  }
 
   const userId = settings.id;
   const now = new Date();
@@ -420,17 +423,17 @@ export async function POST(
         .maybeSingle()
     : { data: null };
 
-  // Look up the bot's owner for CAPI credentials
+  // Look up the bot's owner + token (token reused for welcome DM)
   const { data: botRow } = await sb
     .from("bots")
-    .select("user_id")
+    .select("user_id, token")
     .eq("id", link.bot_id)
     .maybeSingle();
 
   const { data: owner } = botRow?.user_id
     ? await sb
         .from("user_settings")
-        .select("id, fb_pixel_id, fb_capi_token, fb_test_code")
+        .select("id, fb_pixel_id, fb_capi_token, fb_test_code, slug, affiliate_url")
         .eq("id", botRow.user_id)
         .maybeSingle()
     : { data: null };
@@ -510,29 +513,11 @@ export async function POST(
       .eq("is_active", true)
       .maybeSingle();
 
-    if (wm) {
-      const { data: ownerSettings } = botRow?.user_id
-        ? await sb
-            .from("user_settings")
-            .select("slug, affiliate_url")
-            .eq("id", botRow.user_id)
-            .maybeSingle()
-        : { data: null };
+    if (wm && owner?.affiliate_url && botRow?.token) {
+      const outLink = `${process.env.APP_URL}/out?uid=${owner.slug}&jid=${joinRow.id}`;
+      const text = wm.message.replaceAll("{out_link}", outLink);
 
-      if (ownerSettings?.affiliate_url) {
-        const outLink = `${process.env.APP_URL}/out?uid=${ownerSettings.slug}&jid=${joinRow.id}`;
-        const text = wm.message.replace("{out_link}", outLink);
-
-        const { data: botForSend } = await sb
-          .from("bots")
-          .select("token")
-          .eq("id", link.bot_id)
-          .single();
-
-        if (botForSend) {
-          await tg.sendMessage(botForSend.token, cm.new_chat_member.user.id, text);
-        }
-      }
+      await tg.sendMessage(botRow.token, cm.new_chat_member.user.id, text);
     }
   } catch (e) {
     // Welcome DM failure must not break the join flow
