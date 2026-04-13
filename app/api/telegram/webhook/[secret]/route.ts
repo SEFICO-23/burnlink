@@ -63,7 +63,7 @@ async function handleMyChatMember(mcm: TgMyChatMemberUpdate): Promise<void> {
     // Find the bot by telegram_id
     const { data: parentBot } = await sb
       .from("bots")
-      .select("id, username, token, telegram_id, channel_id, is_active")
+      .select("id, username, token, telegram_id, channel_id, is_active, user_id")
       .eq("telegram_id", botTgId)
       .eq("is_active", true)
       .order("created_at", { ascending: true })
@@ -124,6 +124,7 @@ async function handleMyChatMember(mcm: TgMyChatMemberUpdate): Promise<void> {
           telegram_id: parentBot.telegram_id,
           channel_id: chatId,
           is_active: true,
+          user_id: parentBot.user_id,
         })
         .select("id")
         .single();
@@ -257,12 +258,28 @@ export async function POST(
         .maybeSingle()
     : { data: null };
 
+  // Look up the bot's owner for CAPI credentials
+  const { data: botRow } = await sb
+    .from("bots")
+    .select("user_id")
+    .eq("id", link.bot_id)
+    .maybeSingle();
+
+  const { data: owner } = botRow?.user_id
+    ? await sb
+        .from("user_settings")
+        .select("id, fb_pixel_id, fb_capi_token, fb_test_code")
+        .eq("id", botRow.user_id)
+        .maybeSingle()
+    : { data: null };
+
   const { data: joinRow, error: joinErr } = await sb
     .from("joins")
     .insert({
       click_id: click?.id ?? null,
       invite_link_id: link.id,
       telegram_user_id: cm.new_chat_member.user.id,
+      user_id: botRow?.user_id ?? null,
     })
     .select("id, event_id")
     .single();
@@ -277,36 +294,48 @@ export async function POST(
     .update({ status: "burned", burned_at: new Date().toISOString() })
     .eq("id", link.id);
 
-  // Fire CAPI Lead — blocking this request is fine, Telegram has a generous timeout
-  try {
-    const result = await fireCapi({
-      kind: "Lead",
-      event_id: joinRow.event_id,
-      event_source_url: process.env.APP_URL ?? "https://burnlink.local",
-      action_source: "chat",
-      user_data: {
-        fbclid: click?.fbclid ?? null,
-        fbc: click?.fbc ?? null,
-        fbp: click?.fbp ?? null,
-        client_ip_address: click?.ip ?? null,
-        client_user_agent: click?.user_agent ?? null,
-        country: click?.country ?? null,
-      },
-    });
-    await sb.from("capi_events").insert({
-      kind: "Lead",
-      click_id: click?.id ?? null,
+  // Fire CAPI Lead with bot owner's credentials
+  const creds = owner?.fb_pixel_id && owner?.fb_capi_token
+    ? { pixel_id: owner.fb_pixel_id, access_token: owner.fb_capi_token, test_event_code: owner.fb_test_code }
+    : undefined;
+
+  if (!creds) {
+    await logOps("warn", "capi", "Lead skipped — bot owner has no FB credentials", {
       join_id: joinRow.id,
-      event_id: joinRow.event_id,
-      request_body: result.request as object,
-      response: result.body as object,
-      http_status: result.status,
+      user_id: botRow?.user_id,
     });
-  } catch (e) {
-    await logOps("error", "capi", "Lead fire failed", {
-      join_id: joinRow.id,
-      error: (e as Error).message,
-    });
+  } else {
+    try {
+      const result = await fireCapi({
+        kind: "Lead",
+        event_id: joinRow.event_id,
+        event_source_url: process.env.APP_URL ?? "https://burnlink.local",
+        action_source: "chat",
+        user_data: {
+          fbclid: click?.fbclid ?? null,
+          fbc: click?.fbc ?? null,
+          fbp: click?.fbp ?? null,
+          client_ip_address: click?.ip ?? null,
+          client_user_agent: click?.user_agent ?? null,
+          country: click?.country ?? null,
+        },
+      }, creds);
+      await sb.from("capi_events").insert({
+        kind: "Lead",
+        click_id: click?.id ?? null,
+        join_id: joinRow.id,
+        user_id: botRow?.user_id ?? null,
+        event_id: joinRow.event_id,
+        request_body: result.request as object,
+        response: result.body as object,
+        http_status: result.status,
+      });
+    } catch (e) {
+      await logOps("error", "capi", "Lead fire failed", {
+        join_id: joinRow.id,
+        error: (e as Error).message,
+      });
+    }
   }
 
   return NextResponse.json({ ok: true });
