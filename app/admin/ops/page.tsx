@@ -12,24 +12,24 @@ export default async function AdminOpsPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-xl font-semibold">Ops Log (last 100)</h1>
-      <div className="bg-panel border border-border rounded-xl overflow-hidden">
+      <div className="bg-panel border border-border rounded-xl overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-bg border-b border-border">
             <tr className="text-left">
-              <th className="p-3 font-medium">Time</th>
-              <th className="p-3 font-medium">Level</th>
-              <th className="p-3 font-medium">Source</th>
-              <th className="p-3 font-medium">Message</th>
-              <th className="p-3 font-medium">Context</th>
+              <th className="p-2 md:p-3 font-medium">Time</th>
+              <th className="p-2 md:p-3 font-medium">Level</th>
+              <th className="p-2 md:p-3 font-medium">Source</th>
+              <th className="p-2 md:p-3 font-medium">Message</th>
+              <th className="p-2 md:p-3 font-medium">Context</th>
             </tr>
           </thead>
           <tbody>
             {(logs ?? []).map((r) => (
               <tr key={r.id} className="border-t border-border align-top">
-                <td className="p-3 text-xs text-muted whitespace-nowrap">
+                <td className="p-2 md:p-3 text-xs text-muted whitespace-nowrap">
                   {new Date(r.at).toLocaleString()}
                 </td>
-                <td className="p-3 text-xs">
+                <td className="p-2 md:p-3 text-xs">
                   <span
                     className={
                       r.level === "error"
@@ -42,9 +42,9 @@ export default async function AdminOpsPage() {
                     {r.level}
                   </span>
                 </td>
-                <td className="p-3 text-xs font-mono">{r.source}</td>
-                <td className="p-3 text-xs">{r.message}</td>
-                <td className="p-3 text-xs font-mono text-muted max-w-xs truncate">
+                <td className="p-2 md:p-3 text-xs font-mono">{r.source}</td>
+                <td className="p-2 md:p-3 text-xs">{r.message}</td>
+                <td className="p-2 md:p-3 text-xs font-mono text-muted max-w-xs truncate">
                   {r.context ? JSON.stringify(r.context) : "—"}
                 </td>
               </tr>

@@ -38,7 +38,7 @@ export default async function EventsPage() {
         <h2 className="text-sm uppercase tracking-wide text-muted mb-3">
           Recent CAPI events
         </h2>
-        <div className="bg-panel border border-border rounded-xl overflow-hidden text-xs">
+        <div className="bg-panel border border-border rounded-xl overflow-x-auto text-xs">
           <table className="w-full">
             <thead className="bg-bg border-b border-border">
               <tr className="text-left">
@@ -81,7 +81,7 @@ export default async function EventsPage() {
         <h2 className="text-sm uppercase tracking-wide text-muted mb-3">
           Recent ops log
         </h2>
-        <div className="bg-panel border border-border rounded-xl overflow-hidden text-xs">
+        <div className="bg-panel border border-border rounded-xl overflow-x-auto text-xs">
           <table className="w-full">
             <thead className="bg-bg border-b border-border">
               <tr className="text-left">

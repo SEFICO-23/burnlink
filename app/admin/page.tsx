@@ -30,41 +30,41 @@ export default async function AdminUsersPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-xl font-semibold">Users ({users?.length ?? 0})</h1>
-      <div className="bg-panel border border-border rounded-xl overflow-hidden">
+      <div className="bg-panel border border-border rounded-xl overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-bg border-b border-border">
             <tr className="text-left">
-              <th className="p-3 font-medium">Email</th>
-              <th className="p-3 font-medium">Name</th>
-              <th className="p-3 font-medium">Slug</th>
-              <th className="p-3 font-medium">Bots</th>
-              <th className="p-3 font-medium">Pixel</th>
-              <th className="p-3 font-medium">Admin</th>
-              <th className="p-3 font-medium">Joined</th>
-              <th className="p-3"></th>
+              <th className="p-2 md:p-3 font-medium">Email</th>
+              <th className="p-2 md:p-3 font-medium">Name</th>
+              <th className="p-2 md:p-3 font-medium">Slug</th>
+              <th className="p-2 md:p-3 font-medium">Bots</th>
+              <th className="p-2 md:p-3 font-medium">Pixel</th>
+              <th className="p-2 md:p-3 font-medium">Admin</th>
+              <th className="p-2 md:p-3 font-medium">Joined</th>
+              <th className="p-2 md:p-3"></th>
             </tr>
           </thead>
           <tbody>
             {(users ?? []).map((u) => (
               <tr key={u.id} className="border-t border-border">
-                <td className="p-3 text-xs">{emailMap.get(u.id) ?? "—"}</td>
-                <td className="p-3 text-xs">{u.display_name ?? "—"}</td>
-                <td className="p-3 font-mono text-xs">{u.slug}</td>
-                <td className="p-3 text-xs">{botCountMap.get(u.id) ?? 0}</td>
-                <td className="p-3 text-xs">
+                <td className="p-2 md:p-3 text-xs">{emailMap.get(u.id) ?? "—"}</td>
+                <td className="p-2 md:p-3 text-xs">{u.display_name ?? "—"}</td>
+                <td className="p-2 md:p-3 font-mono text-xs">{u.slug}</td>
+                <td className="p-2 md:p-3 text-xs">{botCountMap.get(u.id) ?? 0}</td>
+                <td className="p-2 md:p-3 text-xs">
                   {u.fb_pixel_id ? (
                     <span className="text-ok">configured</span>
                   ) : (
                     <span className="text-muted">—</span>
                   )}
                 </td>
-                <td className="p-3 text-xs">
+                <td className="p-2 md:p-3 text-xs">
                   {u.is_admin ? <span className="text-accent">admin</span> : "—"}
                 </td>
-                <td className="p-3 text-xs text-muted">
+                <td className="p-2 md:p-3 text-xs text-muted">
                   {new Date(u.created_at).toLocaleDateString()}
                 </td>
-                <td className="p-3 text-right">
+                <td className="p-2 md:p-3 text-right">
                   <Link
                     href={`/admin/users/${u.id}`}
                     className="text-xs text-accent hover:underline"

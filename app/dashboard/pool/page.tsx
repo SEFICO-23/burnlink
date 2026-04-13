@@ -22,24 +22,24 @@ export default async function PoolPage() {
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-semibold">Pool health</h2>
-      <div className="bg-panel border border-border rounded-xl overflow-hidden">
+      <div className="bg-panel border border-border rounded-xl overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-bg border-b border-border">
             <tr className="text-left">
-              <th className="p-3 font-medium">Bot</th>
-              <th className="p-3 font-medium">Status</th>
-              <th className="p-3 font-medium text-right">Unused</th>
-              <th className="p-3 font-medium text-right">Reserved</th>
-              <th className="p-3 font-medium text-right">Burned</th>
-              <th className="p-3 font-medium">Last refill</th>
-              <th className="p-3 font-medium">Last error</th>
+              <th className="p-2 md:p-3 font-medium">Bot</th>
+              <th className="p-2 md:p-3 font-medium">Status</th>
+              <th className="p-2 md:p-3 font-medium text-right">Unused</th>
+              <th className="p-2 md:p-3 font-medium text-right">Reserved</th>
+              <th className="p-2 md:p-3 font-medium text-right">Burned</th>
+              <th className="p-2 md:p-3 font-medium">Last refill</th>
+              <th className="p-2 md:p-3 font-medium">Last error</th>
             </tr>
           </thead>
           <tbody>
             {rows.map((r) => (
               <tr key={r.bot_id} className="border-t border-border">
-                <td className="p-3 font-mono text-xs">{r.username}</td>
-                <td className="p-3">
+                <td className="p-2 md:p-3 font-mono text-xs">{r.username}</td>
+                <td className="p-2 md:p-3">
                   <span
                     className={
                       r.is_active ? "text-ok" : "text-muted"
@@ -55,14 +55,14 @@ export default async function PoolPage() {
                 >
                   {r.unused}
                 </td>
-                <td className="p-3 text-right">{r.reserved}</td>
-                <td className="p-3 text-right">{r.burned}</td>
-                <td className="p-3 text-xs text-muted">
+                <td className="p-2 md:p-3 text-right">{r.reserved}</td>
+                <td className="p-2 md:p-3 text-right">{r.burned}</td>
+                <td className="p-2 md:p-3 text-xs text-muted">
                   {r.last_refill_at
                     ? new Date(r.last_refill_at).toLocaleString()
                     : "—"}
                 </td>
-                <td className="p-3 text-xs text-err">{r.last_error ?? "—"}</td>
+                <td className="p-2 md:p-3 text-xs text-err">{r.last_error ?? "—"}</td>
               </tr>
             ))}
             {rows.length === 0 && (

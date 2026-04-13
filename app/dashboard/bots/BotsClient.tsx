@@ -86,39 +86,39 @@ export default function BotsClient({ initial }: { initial: Bot[] }) {
 
       <section>
         <h2 className="text-lg font-semibold mb-3">Configured bots</h2>
-        <div className="bg-panel border border-border rounded-xl overflow-hidden">
+        <div className="bg-panel border border-border rounded-xl overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-bg border-b border-border">
               <tr className="text-left">
-                <th className="p-3 font-medium">Bot</th>
-                <th className="p-3 font-medium">Channel</th>
-                <th className="p-3 font-medium">Status</th>
-                <th className="p-3 font-medium">Last refill</th>
-                <th className="p-3 font-medium">Error</th>
-                <th className="p-3"></th>
+                <th className="p-2 md:p-3 font-medium">Bot</th>
+                <th className="p-2 md:p-3 font-medium">Channel</th>
+                <th className="p-2 md:p-3 font-medium">Status</th>
+                <th className="p-2 md:p-3 font-medium">Last refill</th>
+                <th className="p-2 md:p-3 font-medium">Error</th>
+                <th className="p-2 md:p-3"></th>
               </tr>
             </thead>
             <tbody>
               {bots.map((b) => (
                 <tr key={b.id} className="border-t border-border">
-                  <td className="p-3 font-mono text-xs">{b.username}</td>
-                  <td className="p-3 font-mono text-xs">
+                  <td className="p-2 md:p-3 font-mono text-xs">{b.username}</td>
+                  <td className="p-2 md:p-3 font-mono text-xs">
                     {b.channel_id ? (
                       b.channel_id
                     ) : (
                       <span className="text-warn italic">waiting for channel…</span>
                     )}
                   </td>
-                  <td className="p-3">
+                  <td className="p-2 md:p-3">
                     <span className={b.is_active ? "text-ok" : "text-muted"}>
                       {b.is_active ? "active" : "inactive"}
                     </span>
                   </td>
-                  <td className="p-3 text-xs text-muted">
+                  <td className="p-2 md:p-3 text-xs text-muted">
                     {b.last_refill_at ? new Date(b.last_refill_at).toLocaleString() : "—"}
                   </td>
-                  <td className="p-3 text-xs text-err">{b.last_error ?? "—"}</td>
-                  <td className="p-3 text-right">
+                  <td className="p-2 md:p-3 text-xs text-err">{b.last_error ?? "—"}</td>
+                  <td className="p-2 md:p-3 text-right">
                     {b.is_active && (
                       <button
                         onClick={() => removeBot(b.id)}

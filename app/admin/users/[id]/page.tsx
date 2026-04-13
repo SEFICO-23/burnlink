@@ -90,33 +90,33 @@ export default async function AdminUserDetailPage({
 
       <section>
         <h2 className="text-lg font-semibold mb-3">Bots ({bots?.length ?? 0})</h2>
-        <div className="bg-panel border border-border rounded-xl overflow-hidden">
+        <div className="bg-panel border border-border rounded-xl overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-bg border-b border-border">
               <tr className="text-left">
-                <th className="p-3 font-medium">Bot</th>
-                <th className="p-3 font-medium">Channel</th>
-                <th className="p-3 font-medium">Unused Links</th>
-                <th className="p-3 font-medium">Status</th>
-                <th className="p-3 font-medium">Last Refill</th>
-                <th className="p-3 font-medium">Error</th>
+                <th className="p-2 md:p-3 font-medium">Bot</th>
+                <th className="p-2 md:p-3 font-medium">Channel</th>
+                <th className="p-2 md:p-3 font-medium">Unused Links</th>
+                <th className="p-2 md:p-3 font-medium">Status</th>
+                <th className="p-2 md:p-3 font-medium">Last Refill</th>
+                <th className="p-2 md:p-3 font-medium">Error</th>
               </tr>
             </thead>
             <tbody>
               {(bots ?? []).map((b, i) => (
                 <tr key={b.id} className="border-t border-border">
-                  <td className="p-3 font-mono text-xs">{b.username}</td>
-                  <td className="p-3 font-mono text-xs">{b.channel_id ?? <span className="text-warn italic">pending</span>}</td>
-                  <td className="p-3 text-xs">{poolData[i]?.unused ?? 0}</td>
-                  <td className="p-3 text-xs">
+                  <td className="p-2 md:p-3 font-mono text-xs">{b.username}</td>
+                  <td className="p-2 md:p-3 font-mono text-xs">{b.channel_id ?? <span className="text-warn italic">pending</span>}</td>
+                  <td className="p-2 md:p-3 text-xs">{poolData[i]?.unused ?? 0}</td>
+                  <td className="p-2 md:p-3 text-xs">
                     <span className={b.is_active ? "text-ok" : "text-muted"}>
                       {b.is_active ? "active" : "inactive"}
                     </span>
                   </td>
-                  <td className="p-3 text-xs text-muted">
+                  <td className="p-2 md:p-3 text-xs text-muted">
                     {b.last_refill_at ? new Date(b.last_refill_at).toLocaleString() : "—"}
                   </td>
-                  <td className="p-3 text-xs text-err">{b.last_error ?? "—"}</td>
+                  <td className="p-2 md:p-3 text-xs text-err">{b.last_error ?? "—"}</td>
                 </tr>
               ))}
               {(!bots || bots.length === 0) && (

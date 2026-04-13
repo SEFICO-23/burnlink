@@ -66,9 +66,9 @@ export default async function FunnelPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
+      <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-4">
         <h2 className="text-lg font-semibold">Funnel — last 30 days</h2>
-        <div className="ml-auto flex gap-2 text-xs">
+        <div className="md:ml-auto flex gap-2 text-xs">
           {tabs.map((t) => (
             <a
               key={t.key}
@@ -85,27 +85,27 @@ export default async function FunnelPage({
         </div>
       </div>
 
-      <div className="bg-panel border border-border rounded-xl overflow-hidden">
+      <div className="bg-panel border border-border rounded-xl overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-bg border-b border-border">
             <tr className="text-left">
-              <th className="p-3 font-medium">{by.replace("utm_", "")}</th>
-              <th className="p-3 font-medium text-right">Clicks</th>
-              <th className="p-3 font-medium text-right">Reserved</th>
-              <th className="p-3 font-medium text-right">Joined</th>
-              <th className="p-3 font-medium text-right">Leads fired</th>
-              <th className="p-3 font-medium text-right">Join %</th>
+              <th className="p-2 md:p-3 font-medium">{by.replace("utm_", "")}</th>
+              <th className="p-2 md:p-3 font-medium text-right">Clicks</th>
+              <th className="p-2 md:p-3 font-medium text-right">Reserved</th>
+              <th className="p-2 md:p-3 font-medium text-right">Joined</th>
+              <th className="p-2 md:p-3 font-medium text-right">Leads fired</th>
+              <th className="p-2 md:p-3 font-medium text-right">Join %</th>
             </tr>
           </thead>
           <tbody>
             {rows.map((r) => (
               <tr key={r.key} className="border-t border-border">
-                <td className="p-3 font-mono text-xs">{r.key}</td>
-                <td className="p-3 text-right">{r.clicks}</td>
-                <td className="p-3 text-right">{r.reserved}</td>
-                <td className="p-3 text-right">{r.burned}</td>
-                <td className="p-3 text-right">{r.leads}</td>
-                <td className="p-3 text-right">
+                <td className="p-2 md:p-3 font-mono text-xs">{r.key}</td>
+                <td className="p-2 md:p-3 text-right">{r.clicks}</td>
+                <td className="p-2 md:p-3 text-right">{r.reserved}</td>
+                <td className="p-2 md:p-3 text-right">{r.burned}</td>
+                <td className="p-2 md:p-3 text-right">{r.leads}</td>
+                <td className="p-2 md:p-3 text-right">
                   {r.clicks ? `${((r.burned / r.clicks) * 100).toFixed(1)}%` : "–"}
                 </td>
               </tr>
