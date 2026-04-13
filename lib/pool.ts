@@ -11,11 +11,14 @@ interface Bot {
   id: string;
   username: string;
   token: string;
-  channel_id: number;
+  channel_id: number | null;  // null = pending (no channel discovered yet)
   is_active: boolean;
 }
 
 export async function refillBot(bot: Bot, target = POOL_TARGET, floor = POOL_FLOOR) {
+  if (!bot.channel_id) {
+    return { created: 0, reason: "no_channel" as const };
+  }
   const sb = serviceClient();
   const { count, error } = await sb
     .from("invite_links")
@@ -97,4 +100,13 @@ export async function refillAllActive() {
     results.push({ bot_id: b.id, created: r.created, reason: r.reason });
   }
   return results;
+}
+
+/** Seed a small initial batch on channel discovery (fits in Vercel 60s). */
+export const SEED_BATCH = 200;
+
+export async function seedInitialBatch(bot: Bot): Promise<{ created: number; reason: string }> {
+  if (!bot.channel_id) return { created: 0, reason: "no_channel" };
+  return refillBot(bot, SEED_BATCH, 0);
+  // target=200, floor=0 → always creates up to 200 links
 }
