@@ -2,7 +2,7 @@ import { serviceClient } from "./supabase/server";
 
 export async function logOps(
   level: "info" | "warn" | "error",
-  source: "go" | "webhook" | "refill" | "capi" | "bots" | "auth",
+  source: "go" | "webhook" | "refill" | "capi" | "bots" | "auth" | "out" | "alerts",
   message: string,
   context?: Record<string, unknown>,
 ) {

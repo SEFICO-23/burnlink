@@ -11,7 +11,7 @@
 
 const GRAPH_VERSION = "v20.0";
 
-export type CapiEventKind = "PageView" | "Lead";
+export type CapiEventKind = "PageView" | "Lead" | "InitiateCheckout";
 
 export interface CapiUserData {
   fbclid?: string | null;
