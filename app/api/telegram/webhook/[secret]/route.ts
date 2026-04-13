@@ -15,6 +15,14 @@ import { tg } from "@/lib/telegram";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+interface TgMessageUpdate {
+  message_id: number;
+  from: { id: number; is_bot: boolean; username?: string; first_name?: string };
+  chat: { id: number; type: string };
+  date: number;
+  text?: string;
+}
+
 interface TgChatMemberUpdate {
   update_id: number;
   chat_member?: {
@@ -31,6 +39,7 @@ interface TgChatMemberUpdate {
     };
   };
   my_chat_member?: TgMyChatMemberUpdate;
+  message?: TgMessageUpdate;
 }
 
 interface TgMyChatMemberUpdate {
@@ -182,6 +191,147 @@ async function handleMyChatMember(mcm: TgMyChatMemberUpdate): Promise<void> {
   }
 }
 
+async function handleStats(
+  msg: TgMessageUpdate,
+  sb: ReturnType<typeof serviceClient>,
+): Promise<void> {
+  const chatId = msg.chat.id;
+
+  const { data: settings } = await sb
+    .from("user_settings")
+    .select("id")
+    .eq("telegram_chat_id", chatId)
+    .maybeSingle();
+
+  if (!settings) return;
+
+  const userId = settings.id;
+  const now = new Date();
+  const h24 = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
+  const d7 = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
+
+  const [
+    { count: clicks24h },
+    { count: clicks7d },
+    { count: joins24h },
+    { count: joins7d },
+    { count: capiTotal },
+    { count: capiOk },
+    { data: pools },
+  ] = await Promise.all([
+    sb.from("clicks").select("id", { count: "exact", head: true }).eq("user_id", userId).gte("received_at", h24),
+    sb.from("clicks").select("id", { count: "exact", head: true }).eq("user_id", userId).gte("received_at", d7),
+    sb.from("joins").select("id", { count: "exact", head: true }).eq("user_id", userId).gte("joined_at", h24),
+    sb.from("joins").select("id", { count: "exact", head: true }).eq("user_id", userId).gte("joined_at", d7),
+    sb.from("capi_events").select("id", { count: "exact", head: true }).eq("user_id", userId).gte("fired_at", h24),
+    sb.from("capi_events").select("id", { count: "exact", head: true }).eq("user_id", userId).eq("http_status", 200).gte("fired_at", h24),
+    sb.from("pool_health_vw").select("username, channel_id, unused, burned").eq("user_id", userId).eq("is_active", true),
+  ]);
+
+  const rate24 = capiTotal && capiTotal > 0
+    ? Math.round(((capiOk ?? 0) / capiTotal) * 100)
+    : 0;
+
+  const joinRate24 = clicks24h && clicks24h > 0
+    ? ((joins24h ?? 0) / clicks24h * 100).toFixed(1)
+    : "0";
+
+  let text = `burnlink stats\n\n`;
+  text += `Clicks: ${clicks24h ?? 0} (24h) / ${clicks7d ?? 0} (7d)\n`;
+  text += `Joins: ${joins24h ?? 0} (24h) / ${joins7d ?? 0} (7d)\n`;
+  text += `Join rate (24h): ${joinRate24}%\n`;
+  text += `CAPI success (24h): ${rate24}% (${capiOk ?? 0}/${capiTotal ?? 0})\n\n`;
+
+  if (pools && pools.length > 0) {
+    text += `Pool health:\n`;
+    for (const p of pools) {
+      text += `  ${p.username} #${p.channel_id}: ${p.unused} unused, ${p.burned} burned\n`;
+    }
+  } else {
+    text += `No active bots.\n`;
+  }
+
+  const { data: bot } = await sb
+    .from("bots")
+    .select("token")
+    .eq("user_id", userId)
+    .eq("is_active", true)
+    .limit(1)
+    .maybeSingle();
+
+  if (bot) {
+    await tg.sendMessage(bot.token, chatId, text);
+  }
+}
+
+async function handleMessage(msg: TgMessageUpdate): Promise<void> {
+  const text = msg.text?.trim() ?? "";
+  const chatId = msg.chat.id;
+
+  if (msg.chat.type !== "private") return;
+
+  const sb = serviceClient();
+
+  // /start alerts_<user_id> — link operator's Telegram chat for alerts
+  const startMatch = text.match(/^\/start\s+alerts_(.+)$/);
+  if (startMatch) {
+    const userId = startMatch[1];
+
+    const { data: settings } = await sb
+      .from("user_settings")
+      .select("id, display_name")
+      .eq("id", userId)
+      .maybeSingle();
+
+    if (!settings) {
+      await logOps("warn", "webhook", "/start with invalid user_id", { userId, chatId });
+      return;
+    }
+
+    const { error } = await sb
+      .from("user_settings")
+      .update({ telegram_chat_id: chatId })
+      .eq("id", userId);
+
+    if (error) {
+      await logOps("error", "webhook", "failed to save telegram_chat_id", {
+        userId,
+        chatId,
+        error: error.message,
+      });
+      return;
+    }
+
+    const { data: bot } = await sb
+      .from("bots")
+      .select("token")
+      .eq("user_id", userId)
+      .eq("is_active", true)
+      .limit(1)
+      .maybeSingle();
+
+    if (bot) {
+      await tg.sendMessage(
+        bot.token,
+        chatId,
+        "Alerts enabled! You'll receive pool and CAPI notifications here.",
+      );
+    }
+
+    await logOps("info", "webhook", "operator linked Telegram for alerts", {
+      userId,
+      chatId,
+    });
+    return;
+  }
+
+  // /stats — send operator stats summary
+  if (text === "/stats") {
+    await handleStats(msg, sb);
+    return;
+  }
+}
+
 export async function POST(
   req: NextRequest,
   ctx: { params: Promise<{ secret: string }> },
@@ -207,6 +357,17 @@ export async function POST(
       await handleMyChatMember(update.my_chat_member);
     } catch (e) {
       await logOps("error", "webhook", "my_chat_member handler failed", {
+        error: (e as Error).message,
+      });
+    }
+    return NextResponse.json({ ok: true });
+  }
+
+  if (update.message) {
+    try {
+      await handleMessage(update.message);
+    } catch (e) {
+      await logOps("error", "webhook", "message handler failed", {
         error: (e as Error).message,
       });
     }
