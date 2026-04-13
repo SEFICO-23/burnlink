@@ -11,8 +11,9 @@ create unique index if not exists bots_tgid_channel_uq
   on bots (telegram_id, channel_id)
   where telegram_id is not null and channel_id is not null;
 
--- Update pool_health_vw to show channel_id and filter out pending bots
-create or replace view pool_health_vw as
+-- Recreate pool_health_vw (DROP required — CREATE OR REPLACE can't add/reorder columns)
+drop view if exists pool_health_vw;
+create view pool_health_vw as
 select
   b.id        as bot_id,
   b.username,
