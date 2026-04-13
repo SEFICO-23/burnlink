@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { rscClient } from "@/lib/supabase/server";
+import ThemeToggle from "@/lib/components/ThemeToggle";
 
 export default async function LandingPage() {
   const sb = await rscClient();
@@ -27,6 +28,7 @@ export default async function LandingPage() {
                 </Link>
               </>
             )}
+            <ThemeToggle />
           </div>
         </div>
       </header>

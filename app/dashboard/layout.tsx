@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { rscClient, serviceClient } from "@/lib/supabase/server";
+import ThemeToggle from "@/lib/components/ThemeToggle";
 import { redirect } from "next/navigation";
 
 const tabs = [
@@ -50,13 +51,14 @@ export default async function DashboardLayout({
               </Link>
             ))}
           </nav>
-          <div className="ml-auto flex items-center gap-4 text-xs text-muted">
+          <div className="ml-auto flex items-center gap-3 text-xs text-muted">
             {settings?.is_admin && (
               <Link href="/admin" className="text-accent hover:underline">
                 Admin
               </Link>
             )}
             <span>{data.user.email}</span>
+            <ThemeToggle />
           </div>
         </div>
       </header>

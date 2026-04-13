@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { browserClient } from "@/lib/supabase/browser";
+import ThemeToggle from "@/lib/components/ThemeToggle";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -29,6 +30,9 @@ export default function LoginPage() {
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-bg text-text">
+      <div className="fixed top-4 right-4">
+        <ThemeToggle />
+      </div>
       <form
         onSubmit={submit}
         className="w-full max-w-sm bg-panel border border-border rounded-xl p-8 space-y-4"

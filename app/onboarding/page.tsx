@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import ThemeToggle from "@/lib/components/ThemeToggle";
 
 function generateSlug() {
   return "bl-" + Math.random().toString(36).slice(2, 8);
@@ -42,6 +43,9 @@ export default function OnboardingPage() {
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-bg text-text">
+      <div className="fixed top-4 right-4">
+        <ThemeToggle />
+      </div>
       <form
         onSubmit={submit}
         className="w-full max-w-md bg-panel border border-border rounded-xl p-8 space-y-5"
