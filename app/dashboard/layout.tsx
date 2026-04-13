@@ -26,7 +26,7 @@ export default async function DashboardLayout({
   const svc = serviceClient();
   const { data: settings } = await svc
     .from("user_settings")
-    .select("id")
+    .select("id, is_admin")
     .eq("id", data.user.id)
     .maybeSingle();
 
@@ -50,7 +50,14 @@ export default async function DashboardLayout({
               </Link>
             ))}
           </nav>
-          <div className="ml-auto text-xs text-muted">{data.user.email}</div>
+          <div className="ml-auto flex items-center gap-4 text-xs text-muted">
+            {settings?.is_admin && (
+              <Link href="/admin" className="text-accent hover:underline">
+                Admin
+              </Link>
+            )}
+            <span>{data.user.email}</span>
+          </div>
         </div>
       </header>
       <main className="flex-1 max-w-6xl w-full mx-auto px-6 py-8">{children}</main>
