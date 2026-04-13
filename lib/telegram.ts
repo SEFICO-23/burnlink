@@ -76,7 +76,7 @@ export const tg = {
   async setWebhook(token: string, url: string, secret_token?: string) {
     return call<true>(token, "setWebhook", {
       url,
-      allowed_updates: ["chat_member", "my_chat_member"],
+      allowed_updates: ["chat_member", "my_chat_member", "message"],
       drop_pending_updates: true,
       ...(secret_token ? { secret_token } : {}),
     });
@@ -84,6 +84,14 @@ export const tg = {
 
   async deleteWebhook(token: string) {
     return call<true>(token, "deleteWebhook", { drop_pending_updates: false });
+  },
+
+  async sendMessage(token: string, chat_id: number, text: string, parse_mode?: "HTML" | "Markdown") {
+    return call<{ message_id: number }>(token, "sendMessage", {
+      chat_id,
+      text,
+      ...(parse_mode ? { parse_mode } : {}),
+    });
   },
 };
 
