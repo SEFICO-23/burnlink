@@ -5,7 +5,8 @@ import { useState } from "react";
 interface Bot {
   id: string;
   username: string;
-  channel_id: number;
+  telegram_id: number | null;
+  channel_id: number | null;   // null = pending discovery
   is_active: boolean;
   last_refill_at: string | null;
   last_error: string | null;
@@ -15,7 +16,6 @@ interface Bot {
 export default function BotsClient({ initial }: { initial: Bot[] }) {
   const [bots, setBots] = useState(initial);
   const [token, setToken] = useState("");
-  const [channelId, setChannelId] = useState("");
   const [state, setState] = useState<"idle" | "adding" | "error">("idle");
   const [msg, setMsg] = useState<string | null>(null);
 
@@ -26,7 +26,7 @@ export default function BotsClient({ initial }: { initial: Bot[] }) {
     const res = await fetch("/api/bots", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ token, channel_id: Number(channelId) }),
+      body: JSON.stringify({ token }),
     });
     const body = await res.json();
     if (!body.ok) {
@@ -36,10 +36,9 @@ export default function BotsClient({ initial }: { initial: Bot[] }) {
     }
     setBots([body.bot, ...bots]);
     setToken("");
-    setChannelId("");
     setState("idle");
     setMsg(
-      `Added. Seed refill: created ${body.refill?.created ?? 0} links (${body.refill?.reason ?? "?"}).`,
+      `Added @${body.bot.username}. Webhook registered. Now add this bot as admin to your Telegram channel \u2014 burnlink will auto-detect it.`,
     );
   }
 
@@ -57,42 +56,31 @@ export default function BotsClient({ initial }: { initial: Bot[] }) {
       <section>
         <h2 className="text-lg font-semibold mb-3">Add a bot</h2>
         <form onSubmit={addBot} className="bg-panel border border-border rounded-xl p-5 space-y-3">
-          <div className="grid md:grid-cols-2 gap-3">
-            <label className="block text-xs">
-              <span className="text-muted">BotFather token</span>
-              <input
-                value={token}
-                onChange={(e) => setToken(e.target.value)}
-                placeholder="123456:AA..."
-                required
-                className="mt-1 w-full bg-bg border border-border rounded px-3 py-2 font-mono text-xs"
-              />
-            </label>
-            <label className="block text-xs">
-              <span className="text-muted">Channel ID (e.g. -1001234567890)</span>
-              <input
-                value={channelId}
-                onChange={(e) => setChannelId(e.target.value)}
-                placeholder="-1001234567890"
-                required
-                className="mt-1 w-full bg-bg border border-border rounded px-3 py-2 font-mono text-xs"
-              />
-            </label>
-          </div>
+          <label className="block text-xs">
+            <span className="text-muted">BotFather token</span>
+            <input
+              value={token}
+              onChange={(e) => setToken(e.target.value)}
+              placeholder="123456:AA..."
+              required
+              className="mt-1 w-full bg-bg border border-border rounded px-3 py-2 font-mono text-xs"
+            />
+          </label>
           <div className="flex items-center gap-4">
             <button
               type="submit"
               disabled={state === "adding"}
               className="bg-accent text-black font-medium rounded px-4 py-2 text-sm disabled:opacity-60"
             >
-              {state === "adding" ? "Adding and seeding 1000 links…" : "Add bot"}
+              {state === "adding" ? "Validating…" : "Add bot"}
             </button>
             {msg && <p className="text-xs text-muted">{msg}</p>}
           </div>
         </form>
         <p className="text-xs text-muted mt-2">
-          The bot must already be an admin of the channel with the &ldquo;Invite users&rdquo;
-          permission. This will create 1000 single-use invite links inline.
+          Paste a BotFather token. The webhook is registered automatically. Then add
+          the bot as admin to your Telegram channel(s) &mdash; burnlink will auto-detect
+          each channel and start seeding links.
         </p>
       </section>
 
@@ -114,7 +102,13 @@ export default function BotsClient({ initial }: { initial: Bot[] }) {
               {bots.map((b) => (
                 <tr key={b.id} className="border-t border-border">
                   <td className="p-3 font-mono text-xs">{b.username}</td>
-                  <td className="p-3 font-mono text-xs">{b.channel_id}</td>
+                  <td className="p-3 font-mono text-xs">
+                    {b.channel_id ? (
+                      b.channel_id
+                    ) : (
+                      <span className="text-warn italic">waiting for channel…</span>
+                    )}
+                  </td>
                   <td className="p-3">
                     <span className={b.is_active ? "text-ok" : "text-muted"}>
                       {b.is_active ? "active" : "inactive"}
