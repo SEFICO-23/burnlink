@@ -39,7 +39,7 @@ export async function refillBot(bot: Bot, target = POOL_TARGET, floor = POOL_FLO
   if (floor > 0 && unused >= floor) return { created: 0, reason: "above_floor" as const, unused };
 
   // Alert if pool is critically low (below 100)
-  if (unused < 100 && bot.channel_id) {
+  if (unused < 100) {
     const { data: botOwner } = await sb
       .from("bots")
       .select("user_id")
