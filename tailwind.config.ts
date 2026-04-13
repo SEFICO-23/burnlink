@@ -5,15 +5,15 @@ export default {
   theme: {
     extend: {
       colors: {
-        bg: "#0a0a0b",
-        panel: "#131316",
-        border: "#24242a",
-        text: "#e8e8ec",
-        muted: "#8a8a93",
-        accent: "#ff5a1f",
-        ok: "#22c55e",
-        warn: "#eab308",
-        err: "#ef4444",
+        bg: "var(--color-bg)",
+        panel: "var(--color-panel)",
+        border: "var(--color-border)",
+        text: "var(--color-text)",
+        muted: "var(--color-muted)",
+        accent: "var(--color-accent)",
+        ok: "var(--color-ok)",
+        warn: "var(--color-warn)",
+        err: "var(--color-err)",
       },
       fontFamily: {
         mono: ["ui-monospace", "SFMono-Regular", "Menlo", "monospace"],
