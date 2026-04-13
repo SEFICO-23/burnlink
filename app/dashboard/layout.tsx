@@ -9,8 +9,10 @@ const tabs = [
   { href: "/dashboard/pool", label: "Pool" },
   { href: "/dashboard/events", label: "Events" },
   { href: "/dashboard/bots", label: "Bots" },
+  { href: "/dashboard/messages", label: "Messages" },
+  { href: "/dashboard/alerts", label: "Alerts" },
   { href: "/dashboard/settings", label: "Settings" },
-] as const;
+];
 
 export default async function DashboardLayout({
   children,
@@ -44,7 +46,7 @@ export default async function DashboardLayout({
             {tabs.map((t) => (
               <Link
                 key={t.href}
-                href={t.href}
+                href={t.href as any}
                 className="text-muted hover:text-text transition"
               >
                 {t.label}
