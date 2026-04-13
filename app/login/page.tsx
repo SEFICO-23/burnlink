@@ -34,7 +34,7 @@ export default function LoginPage() {
         className="w-full max-w-sm bg-panel border border-border rounded-xl p-8 space-y-4"
       >
         <h1 className="text-xl font-semibold">burnlink</h1>
-        <p className="text-sm text-muted">Operator sign-in</p>
+        <p className="text-sm text-muted">Sign in with your email</p>
         <input
           type="email"
           required
