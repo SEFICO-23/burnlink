@@ -1,4 +1,4 @@
-// POST  /api/bots  — operator adds a bot. Validates token + channel, seeds pool.
+// POST  /api/bots  — operator adds a bot (token-only). Registers webhook for auto-discovery.
 // DELETE /api/bots?id=<uuid> — deactivate a bot (soft).
 //
 // Auth: uses the operator's Supabase session cookie. Must be the configured OPERATOR_EMAIL.
@@ -6,7 +6,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { serviceClient, rscClient } from "@/lib/supabase/server";
 import { tg } from "@/lib/telegram";
-import { refillBot } from "@/lib/pool";
 import { logOps } from "@/lib/ops";
 
 export const runtime = "nodejs";
@@ -25,30 +24,44 @@ export async function POST(req: NextRequest) {
   const user = await requireOperator();
   if (!user) return NextResponse.json({ ok: false }, { status: 401 });
 
-  const body = (await req.json().catch(() => null)) as
-    | { token?: string; channel_id?: number }
-    | null;
-  if (!body?.token || !body?.channel_id) {
+  const body = (await req.json().catch(() => null)) as { token?: string } | null;
+  if (!body?.token) {
     return NextResponse.json(
-      { ok: false, error: "token and channel_id required" },
+      { ok: false, error: "token required" },
       { status: 400 },
     );
   }
 
   try {
     const me = await tg.getMe(body.token);
-    const chat = await tg.getChat(body.token, body.channel_id);
 
     const sb = serviceClient();
+
+    // Check if this bot (by telegram_id) already has a pending row
+    const { data: existing } = await sb
+      .from("bots")
+      .select("id")
+      .eq("telegram_id", me.id)
+      .is("channel_id", null)
+      .maybeSingle();
+
+    if (existing) {
+      return NextResponse.json(
+        { ok: false, error: "This bot is already registered and waiting for a channel. Add it as admin to a Telegram channel." },
+        { status: 409 },
+      );
+    }
+
     const { data: bot, error } = await sb
       .from("bots")
       .insert({
         username: me.username ?? me.first_name,
         token: body.token,
-        channel_id: chat.id,
+        telegram_id: me.id,
+        channel_id: null,
         is_active: true,
       })
-      .select("id, username, token, channel_id, is_active")
+      .select("id, username, telegram_id, channel_id, is_active")
       .single();
 
     if (error || !bot) {
@@ -58,10 +71,17 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Kick off initial seed inline (1000 links).
-    // This will take ~10s at concurrency 5 and 50ms stagger.
-    const result = await refillBot(bot);
-    return NextResponse.json({ ok: true, bot, refill: result });
+    // Register webhook so Telegram sends my_chat_member when bot is added to channels
+    const webhookUrl = `${process.env.APP_URL}/api/telegram/webhook/${process.env.TG_WEBHOOK_SECRET}`;
+    await tg.setWebhook(body.token, webhookUrl, process.env.TG_WEBHOOK_SECRET);
+
+    await logOps("info", "bots", "bot added, webhook registered, waiting for channel", {
+      bot_id: bot.id,
+      username: bot.username,
+      telegram_id: me.id,
+    });
+
+    return NextResponse.json({ ok: true, bot });
   } catch (e) {
     const msg = (e as Error).message;
     await logOps("error", "bots", "add bot failed", { error: msg });
