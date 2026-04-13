@@ -8,7 +8,8 @@ export async function logOps(
 ) {
   try {
     const sb = serviceClient();
-    await sb.from("ops_log").insert({ level, source, message, context });
+    const userId = context?.user_id as string | undefined;
+    await sb.from("ops_log").insert({ level, source, message, context, user_id: userId });
   } catch {
     // swallow — logging must not break the main flow
   }

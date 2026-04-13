@@ -57,11 +57,17 @@ export default function MessagesClient({
       setMsg(body.error ?? "failed");
       return;
     }
-    setMessages([body.data, ...messages.filter(
+    const updated = [body.data, ...messages.filter(
       (m) => !(m.bot_id === body.data.bot_id && m.channel_id === body.data.channel_id),
-    )]);
+    )];
+    setMessages(updated);
     setState("idle");
     setMsg("Saved.");
+    // Reset dropdown to next unconfigured bot
+    const nextUnconfigured = bots.find(
+      (b) => !updated.some((m) => m.bot_id === b.id && m.channel_id === b.channel_id),
+    );
+    if (nextUnconfigured) setSelectedBot(nextUnconfigured.id);
   }
 
   async function toggleActive(wm: WelcomeMessage) {

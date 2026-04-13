@@ -42,6 +42,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "missing fields" }, { status: 400 });
   }
 
+  if (body.message.length > 4000) {
+    return NextResponse.json({ ok: false, error: "message too long (max 4000 chars)" }, { status: 400 });
+  }
+
   const sb = serviceClient();
 
   // Verify bot ownership
