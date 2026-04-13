@@ -8,18 +8,21 @@ interface Settings {
   fb_pixel_id: string | null;
   fb_capi_token: string | null;
   fb_test_code: string | null;
+  affiliate_url: string | null;
 }
 
 export default function SettingsClient({ initial }: { initial: Settings | null }) {
   const [pixelId, setPixelId] = useState(initial?.fb_pixel_id ?? "");
   const [capiToken, setCapiToken] = useState(initial?.fb_capi_token ?? "");
   const [testCode, setTestCode] = useState(initial?.fb_test_code ?? "");
+  const [affiliateUrl, setAffiliateUrl] = useState(initial?.affiliate_url ?? "");
   const [state, setState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [msg, setMsg] = useState<string | null>(null);
 
-  const trackingUrl = typeof window !== "undefined"
-    ? `${window.location.origin}/go?uid=${initial?.slug ?? ""}`
-    : `/go?uid=${initial?.slug ?? ""}`;
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const slug = initial?.slug ?? "";
+  const trackingUrl = `${origin}/go?uid=${slug}`;
+  const outUrl = `${origin}/out?uid=${slug}`;
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
@@ -31,6 +34,7 @@ export default function SettingsClient({ initial }: { initial: Settings | null }
         fb_pixel_id: pixelId || null,
         fb_capi_token: capiToken || null,
         fb_test_code: testCode || null,
+        affiliate_url: affiliateUrl || null,
       }),
     });
     const body = await res.json();
@@ -62,6 +66,26 @@ export default function SettingsClient({ initial }: { initial: Settings | null }
               Copy
             </button>
           </div>
+          <p className="text-xs text-muted mt-3">Affiliate redirect URL:</p>
+          <code className="block bg-bg border border-border rounded px-3 py-2 text-sm font-mono break-all mt-1">
+            {outUrl}
+          </code>
+        </div>
+      </section>
+
+      <section>
+        <h2 className="text-lg font-semibold mb-3">Affiliate URL</h2>
+        <div className="bg-panel border border-border rounded-xl p-5 space-y-3">
+          <p className="text-xs text-muted mb-2">
+            The destination URL for /out redirects. This is where users go when they click
+            the affiliate link in the welcome DM.
+          </p>
+          <input
+            value={affiliateUrl}
+            onChange={(e) => setAffiliateUrl(e.target.value)}
+            placeholder="https://your-affiliate-offer.com/..."
+            className="w-full bg-bg border border-border rounded px-3 py-2 font-mono text-sm"
+          />
         </div>
       </section>
 

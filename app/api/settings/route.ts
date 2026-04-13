@@ -15,6 +15,7 @@ export async function PUT(req: NextRequest) {
     fb_pixel_id?: string | null;
     fb_capi_token?: string | null;
     fb_test_code?: string | null;
+    affiliate_url?: string | null;
   } | null;
 
   if (!body) {
@@ -28,6 +29,7 @@ export async function PUT(req: NextRequest) {
       fb_pixel_id: body.fb_pixel_id,
       fb_capi_token: body.fb_capi_token,
       fb_test_code: body.fb_test_code,
+      affiliate_url: body.affiliate_url,
     })
     .eq("id", auth.user.id);
 
