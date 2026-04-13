@@ -130,6 +130,10 @@ export async function GET(req: NextRequest) {
         user_id: user.id,
         error: (e as Error).message,
       });
+      const { sendOperatorAlert } = await import("@/lib/alerts");
+      await sendOperatorAlert(user.id, `CAPI PageView fire failed: ${(e as Error).message}`, {
+        click_id: click.id,
+      });
     }
   });
 

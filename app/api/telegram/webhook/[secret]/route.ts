@@ -500,6 +500,12 @@ export async function POST(
         join_id: joinRow.id,
         error: (e as Error).message,
       });
+      if (botRow?.user_id) {
+        const { sendOperatorAlert } = await import("@/lib/alerts");
+        await sendOperatorAlert(botRow.user_id, `CAPI Lead fire failed: ${(e as Error).message}`, {
+          join_id: joinRow.id,
+        });
+      }
     }
   }
 
