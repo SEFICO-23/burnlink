@@ -44,7 +44,13 @@ async function hashMaybe(v: string | null | undefined) {
   return sha256Hex(v.trim().toLowerCase());
 }
 
-export async function buildCapiPayload(input: CapiEventInput) {
+export interface CapiCredentials {
+  pixel_id: string;
+  access_token: string;
+  test_event_code?: string | null;
+}
+
+export async function buildCapiPayload(input: CapiEventInput, testEventCode?: string | null) {
   const {
     kind,
     event_id,
@@ -76,28 +82,31 @@ export async function buildCapiPayload(input: CapiEventInput) {
         user_data: ud,
       },
     ],
-    ...(process.env.FB_TEST_EVENT_CODE
-      ? { test_event_code: process.env.FB_TEST_EVENT_CODE }
+    ...(testEventCode ?? process.env.FB_TEST_EVENT_CODE
+      ? { test_event_code: testEventCode ?? process.env.FB_TEST_EVENT_CODE }
       : {}),
   };
 }
 
-export async function fireCapi(input: CapiEventInput): Promise<{
+export async function fireCapi(
+  input: CapiEventInput,
+  credentials?: CapiCredentials,
+): Promise<{
   status: number;
   body: unknown;
   request: unknown;
 }> {
-  const pixelId = process.env.FB_PIXEL_ID;
-  const token = process.env.FB_CAPI_ACCESS_TOKEN;
+  const pixelId = credentials?.pixel_id ?? process.env.FB_PIXEL_ID;
+  const token = credentials?.access_token ?? process.env.FB_CAPI_ACCESS_TOKEN;
   if (!pixelId || !token) {
     return {
       status: 0,
-      body: { error: "FB_PIXEL_ID / FB_CAPI_ACCESS_TOKEN missing" },
+      body: { error: "FB credentials not configured" },
       request: input,
     };
   }
 
-  const payload = await buildCapiPayload(input);
+  const payload = await buildCapiPayload(input, credentials?.test_event_code);
   const url = `https://graph.facebook.com/${GRAPH_VERSION}/${pixelId}/events?access_token=${encodeURIComponent(
     token,
   )}`;
