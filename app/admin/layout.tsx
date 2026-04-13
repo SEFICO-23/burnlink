@@ -38,7 +38,7 @@ export default async function AdminLayout({
             {tabs.map((t) => (
               <Link
                 key={t.href}
-                href={t.href as any}
+                href={t.href}
                 className="text-muted hover:text-text transition"
               >
                 {t.label}
