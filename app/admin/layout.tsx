@@ -31,11 +31,11 @@ export default async function AdminLayout({
   return (
     <div className="min-h-screen flex flex-col">
       <header className="border-b border-border">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center gap-8">
+        <div className="max-w-6xl mx-auto px-4 md:px-6 py-3 md:py-4 flex items-center gap-4 md:gap-8">
           <Link href="/admin" className="font-semibold text-lg">
             burnlink <span className="text-accent text-sm font-normal ml-1">admin</span>
           </Link>
-          <nav className="flex gap-4 text-sm">
+          <nav className="flex gap-4 text-sm overflow-x-auto whitespace-nowrap">
             {tabs.map((t) => (
               <Link
                 key={t.href}
