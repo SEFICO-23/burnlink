@@ -102,5 +102,4 @@ Use `https://your-app.vercel.app/go` as the ad destination. FB will append `fbcl
 - Per-user affiliate attribution (no `/out` redirect, no `Purchase` event)
 - Multi-tenant / orgs / billing
 - Bot-first DM flow
-- Multiple channels in one deployment
 - TikTok, Google, Instagram CAPI (Facebook only)
