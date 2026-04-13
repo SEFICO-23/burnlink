@@ -1,7 +1,5 @@
-// POST  /api/bots  — operator adds a bot (token-only). Registers webhook for auto-discovery.
-// DELETE /api/bots?id=<uuid> — deactivate a bot (soft).
-//
-// Auth: uses the operator's Supabase session cookie. Must be the configured OPERATOR_EMAIL.
+// POST  /api/bots  — authenticated user adds a bot (token-only). Registers webhook for auto-discovery.
+// DELETE /api/bots?id=<uuid> — deactivate a bot (soft). Must own the bot.
 
 import { NextRequest, NextResponse } from "next/server";
 import { serviceClient, rscClient } from "@/lib/supabase/server";
@@ -11,17 +9,15 @@ import { logOps } from "@/lib/ops";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-async function requireOperator() {
+async function requireAuth() {
   const sb = await rscClient();
   const { data } = await sb.auth.getUser();
-  if (!data.user || data.user.email !== process.env.OPERATOR_EMAIL) {
-    return null;
-  }
+  if (!data.user) return null;
   return data.user;
 }
 
 export async function POST(req: NextRequest) {
-  const user = await requireOperator();
+  const user = await requireAuth();
   if (!user) return NextResponse.json({ ok: false }, { status: 401 });
 
   const body = (await req.json().catch(() => null)) as { token?: string } | null;
@@ -60,6 +56,7 @@ export async function POST(req: NextRequest) {
         telegram_id: me.id,
         channel_id: null,
         is_active: true,
+        user_id: user.id,
       })
       .select("id, username, telegram_id, channel_id, is_active")
       .single();
@@ -90,13 +87,20 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  const user = await requireOperator();
+  const user = await requireAuth();
   if (!user) return NextResponse.json({ ok: false }, { status: 401 });
 
   const id = new URL(req.url).searchParams.get("id");
   if (!id) return NextResponse.json({ ok: false }, { status: 400 });
 
   const sb = serviceClient();
+
+  // Verify ownership
+  const { data: bot } = await sb.from("bots").select("user_id").eq("id", id).maybeSingle();
+  if (!bot || bot.user_id !== user.id) {
+    return NextResponse.json({ ok: false }, { status: 404 });
+  }
+
   const { error } = await sb.from("bots").update({ is_active: false }).eq("id", id);
   if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true });
