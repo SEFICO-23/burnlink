@@ -8,6 +8,7 @@ const tabs = [
   { href: "/dashboard/pool", label: "Pool" },
   { href: "/dashboard/events", label: "Events" },
   { href: "/dashboard/bots", label: "Bots" },
+  { href: "/dashboard/settings", label: "Settings" },
 ] as const;
 
 export default async function DashboardLayout({
