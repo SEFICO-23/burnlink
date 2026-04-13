@@ -10,6 +10,7 @@ import { serviceClient } from "@/lib/supabase/server";
 import { fireCapi } from "@/lib/capi";
 import { seedInitialBatch } from "@/lib/pool";
 import { logOps } from "@/lib/ops";
+import { tg } from "@/lib/telegram";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -336,6 +337,49 @@ export async function POST(
         error: (e as Error).message,
       });
     }
+  }
+
+  // Send welcome DM with /out link
+  try {
+    const { data: wm } = await sb
+      .from("welcome_messages")
+      .select("message")
+      .eq("bot_id", link.bot_id)
+      .eq("channel_id", cm.chat.id)
+      .eq("is_active", true)
+      .maybeSingle();
+
+    if (wm) {
+      const { data: ownerSettings } = botRow?.user_id
+        ? await sb
+            .from("user_settings")
+            .select("slug, affiliate_url")
+            .eq("id", botRow.user_id)
+            .maybeSingle()
+        : { data: null };
+
+      if (ownerSettings?.affiliate_url) {
+        const outLink = `${process.env.APP_URL}/out?uid=${ownerSettings.slug}&jid=${joinRow.id}`;
+        const text = wm.message.replace("{out_link}", outLink);
+
+        const { data: botForSend } = await sb
+          .from("bots")
+          .select("token")
+          .eq("id", link.bot_id)
+          .single();
+
+        if (botForSend) {
+          await tg.sendMessage(botForSend.token, cm.new_chat_member.user.id, text);
+        }
+      }
+    }
+  } catch (e) {
+    // Welcome DM failure must not break the join flow
+    await logOps("warn", "webhook", "welcome DM failed", {
+      join_id: joinRow.id,
+      telegram_user_id: cm.new_chat_member.user.id,
+      error: (e as Error).message,
+    });
   }
 
   return NextResponse.json({ ok: true });
