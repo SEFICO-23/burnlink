@@ -3,9 +3,10 @@ import { createServerClient, type CookieOptions } from "@supabase/ssr";
 
 type CookieSetItem = { name: string; value: string; options: CookieOptions };
 
-// Gate /dashboard/**. Everything else is public.
 export async function middleware(req: NextRequest) {
-  if (!req.nextUrl.pathname.startsWith("/dashboard")) return NextResponse.next();
+  const path = req.nextUrl.pathname;
+  const isProtected = path.startsWith("/dashboard") || path.startsWith("/admin") || path.startsWith("/onboarding");
+  if (!isProtected) return NextResponse.next();
 
   const res = NextResponse.next();
   const supabase = createServerClient(
@@ -22,13 +23,12 @@ export async function middleware(req: NextRequest) {
   );
 
   const { data } = await supabase.auth.getUser();
-  if (!data.user || data.user.email !== process.env.OPERATOR_EMAIL) {
-    const login = new URL("/login", req.url);
-    return NextResponse.redirect(login);
+  if (!data.user) {
+    return NextResponse.redirect(new URL("/login", req.url));
   }
   return res;
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*"],
+  matcher: ["/dashboard/:path*", "/admin/:path*", "/onboarding/:path*"],
 };
