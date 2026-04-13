@@ -68,14 +68,14 @@ for (const bot of unique) {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
         url: webhookUrl,
-        allowed_updates: ['chat_member', 'my_chat_member'],
+        allowed_updates: ['chat_member', 'my_chat_member', 'message'],
         secret_token: secret,
         drop_pending_updates: true,
       }),
     });
     const data = await res.json();
     if (data.ok) {
-      console.log(`OK   ${bot.username}: webhook set (chat_member + my_chat_member)`);
+      console.log(`OK   ${bot.username}: webhook set (chat_member + my_chat_member + message)`);
       ok++;
     } else {
       console.log(`FAIL ${bot.username}: ${data.description}`);
