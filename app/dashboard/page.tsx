@@ -1,4 +1,5 @@
 import { rscClient } from "@/lib/supabase/server";
+import ChartSection from "./ChartSection";
 
 function Card({
   label,
@@ -45,13 +46,49 @@ async function capiSuccessSince(since: string) {
   return { total, ok: ok ?? 0, rate: `${Math.round(((ok ?? 0) / total) * 100)}%` };
 }
 
+async function dailyCounts(days: number) {
+  const sb = await rscClient();
+  const since = new Date(Date.now() - days * 24 * 3600e3).toISOString();
+
+  const { data: clicks } = await sb
+    .from("clicks")
+    .select("received_at")
+    .gte("received_at", since);
+
+  const { data: joins } = await sb
+    .from("joins")
+    .select("joined_at")
+    .gte("joined_at", since);
+
+  const map = new Map<string, { clicks: number; joins: number }>();
+  for (let i = 0; i < days; i++) {
+    const d = new Date(Date.now() - (days - 1 - i) * 24 * 3600e3);
+    const key = d.toISOString().slice(0, 10);
+    map.set(key, { clicks: 0, joins: 0 });
+  }
+
+  for (const c of clicks ?? []) {
+    const key = new Date(c.received_at).toISOString().slice(0, 10);
+    const entry = map.get(key);
+    if (entry) entry.clicks++;
+  }
+
+  for (const j of joins ?? []) {
+    const key = new Date(j.joined_at).toISOString().slice(0, 10);
+    const entry = map.get(key);
+    if (entry) entry.joins++;
+  }
+
+  return [...map.entries()].map(([day, v]) => ({ day, ...v }));
+}
+
 export default async function Overview() {
   const now = new Date();
   const d1 = new Date(now.getTime() - 24 * 3600e3).toISOString();
   const d7 = new Date(now.getTime() - 7 * 24 * 3600e3).toISOString();
   const d30 = new Date(now.getTime() - 30 * 24 * 3600e3).toISOString();
 
-  const [c1, c7, c30, j1, j7, j30, capi1] = await Promise.all([
+  const [c1, c7, c30, j1, j7, j30, capi1, daily] = await Promise.all([
     countSince("clicks", d1),
     countSince("clicks", d7),
     countSince("clicks", d30),
@@ -59,6 +96,7 @@ export default async function Overview() {
     countSince("joins", d7),
     countSince("joins", d30),
     capiSuccessSince(d1),
+    dailyCounts(30),
   ]);
 
   const rate = (j: number, c: number) => (c ? `${((j / c) * 100).toFixed(1)}%` : "–");
@@ -98,6 +136,8 @@ export default async function Overview() {
           <Card label="—" value="" />
         </div>
       </section>
+
+      <ChartSection data={daily} />
     </div>
   );
 }
