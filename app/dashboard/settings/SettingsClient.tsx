@@ -9,9 +9,23 @@ interface Settings {
   fb_capi_token: string | null;
   fb_test_code: string | null;
   affiliate_url: string | null;
+  telegram_chat_id: number | null;
 }
 
-export default function SettingsClient({ initial }: { initial: Settings | null }) {
+interface BotRef {
+  id: string;
+  username: string;
+}
+
+export default function SettingsClient({
+  initial,
+  bots,
+  userId,
+}: {
+  initial: Settings | null;
+  bots: BotRef[];
+  userId: string;
+}) {
   const [pixelId, setPixelId] = useState(initial?.fb_pixel_id ?? "");
   const [capiToken, setCapiToken] = useState(initial?.fb_capi_token ?? "");
   const [testCode, setTestCode] = useState(initial?.fb_test_code ?? "");
@@ -86,6 +100,39 @@ export default function SettingsClient({ initial }: { initial: Settings | null }
             placeholder="https://your-affiliate-offer.com/..."
             className="w-full bg-bg border border-border rounded px-3 py-2 font-mono text-sm"
           />
+        </div>
+      </section>
+
+      <section>
+        <h2 className="text-lg font-semibold mb-3">Telegram Alerts</h2>
+        <div className="bg-panel border border-border rounded-xl p-5">
+          {initial?.telegram_chat_id ? (
+            <p className="text-xs text-green-500">
+              Telegram alerts linked (chat ID: {initial.telegram_chat_id})
+            </p>
+          ) : (
+            <>
+              <p className="text-xs text-muted mb-3">
+                Click the button below to link your Telegram account for real-time alerts
+                (low pool, CAPI failures). You only need to do this once with any of your bots.
+              </p>
+              {bots.length > 0 ? (
+                bots.map((b) => (
+                  <a
+                    key={b.id}
+                    href={`https://t.me/${b.username}?start=alerts_${userId}`}
+                    target="_blank"
+                    rel="noopener"
+                    className="inline-block bg-accent text-black font-medium rounded px-3 py-2 text-sm mr-2 mb-2"
+                  >
+                    Enable via @{b.username}
+                  </a>
+                ))
+              ) : (
+                <p className="text-xs text-muted">Add a bot first to enable alerts.</p>
+              )}
+            </>
+          )}
         </div>
       </section>
 
