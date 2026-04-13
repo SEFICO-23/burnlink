@@ -35,7 +35,7 @@ export async function refillBot(bot: Bot, target = POOL_TARGET, floor = POOL_FLO
   }
 
   const unused = count ?? 0;
-  if (unused >= floor) return { created: 0, reason: "above_floor" as const, unused };
+  if (floor > 0 && unused >= floor) return { created: 0, reason: "above_floor" as const, unused };
 
   const need = target - unused;
   const BATCH = 100;
