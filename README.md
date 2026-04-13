@@ -70,28 +70,17 @@ Go to `http://localhost:3000/login`, request a magic link, open it. You should l
 
 ### 5. Add bots
 
-Go to `/dashboard/bots` and add each bot:
+Go to `/dashboard/bots` and paste each bot's BotFather token. burnlink will:
 
-1. In Telegram, add the bot to your private channel as an **admin** with "Invite users" permission.
-2. Get the channel's numeric ID (e.g. `-1001234567890`).
-3. Paste the bot token and channel ID into the form.
-4. The form will validate via `getMe` + `getChat`, then inline-create 1000 burn-links (~10s at concurrency 5).
+1. Validate the token via `getMe`.
+2. Register the Telegram webhook automatically.
+3. Show the bot as "waiting for channel…"
 
-### 6. Register webhooks
+Then in Telegram, add the bot to your private channel as an **admin** with the "Invite users" permission. burnlink will auto-detect the channel and seed an initial batch of 200 links. The cron refill tops it up to 1000.
 
-For each bot, set the Telegram webhook so `chat_member` updates reach burnlink. Replace placeholders:
+One bot can serve multiple channels — just add it as admin to each one.
 
-```bash
-curl -X POST "https://api.telegram.org/bot<BOT_TOKEN>/setWebhook" \
-  -H "content-type: application/json" \
-  -d '{
-    "url": "https://your-app.vercel.app/api/telegram/webhook/<TG_WEBHOOK_SECRET>",
-    "allowed_updates": ["chat_member"],
-    "secret_token": "<TG_WEBHOOK_SECRET>"
-  }'
-```
-
-### 7. Point FB ads at `/go`
+### 6. Point FB ads at `/go`
 
 Use `https://your-app.vercel.app/go` as the ad destination. FB will append `fbclid` automatically. Add UTM params for campaign / source / content so the funnel view can break them down.
 
@@ -115,4 +104,3 @@ Use `https://your-app.vercel.app/go` as the ad destination. FB will append `fbcl
 - Bot-first DM flow
 - Multiple channels in one deployment
 - TikTok, Google, Instagram CAPI (Facebook only)
-
