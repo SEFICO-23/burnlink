@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { rscClient } from "@/lib/supabase/server";
+import { rscClient, serviceClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 
 const tabs = [
@@ -17,8 +17,20 @@ export default async function DashboardLayout({
 }) {
   const sb = await rscClient();
   const { data } = await sb.auth.getUser();
-  if (!data.user || data.user.email !== process.env.OPERATOR_EMAIL) {
+  if (!data.user) {
     redirect("/login");
+  }
+
+  // Check onboarding complete
+  const svc = serviceClient();
+  const { data: settings } = await svc
+    .from("user_settings")
+    .select("id")
+    .eq("id", data.user.id)
+    .maybeSingle();
+
+  if (!settings) {
+    redirect("/onboarding");
   }
 
   return (
