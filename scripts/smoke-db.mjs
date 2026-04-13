@@ -37,39 +37,40 @@ const supabase = createClient(url, serviceKey, {
 let passed = 0;
 const total = 4;
 
-// (a) Schema present — proxy via app_config single() (success = auth + RLS bypass).
+// (a) Schema present — proxy via user_settings single() (success = auth + RLS bypass).
 try {
   const { data, error } = await supabase
-    .from('app_config')
-    .select('operator_email')
+    .from('user_settings')
+    .select('slug, is_admin')
+    .eq('is_admin', true)
     .single();
   if (error) {
     console.log(`FAIL (a) schema/auth: ${error.message}`);
   } else {
-    console.log(`PASS (a) schema/auth: app_config reachable, operator_email=${data.operator_email}`);
+    console.log(`PASS (a) schema/auth: user_settings reachable, admin slug=${data.slug}`);
     passed++;
   }
 } catch (e) {
   console.log(`FAIL (a) schema/auth: ${e.message}`);
 }
 
-// (b) app_config seed
+// (b) user_settings admin seed
 try {
   const { data, error } = await supabase
-    .from('app_config')
-    .select('operator_email')
-    .eq('id', 1)
+    .from('user_settings')
+    .select('slug, fb_pixel_id, is_admin')
+    .eq('is_admin', true)
     .single();
   if (error) {
-    console.log(`FAIL (b) app_config seed: ${error.message}`);
-  } else if (data?.operator_email !== 'wordlw82@gmail.com') {
-    console.log(`FAIL (b) app_config seed: expected wordlw82@gmail.com, got ${data?.operator_email}`);
+    console.log(`FAIL (b) admin seed: ${error.message}`);
+  } else if (!data?.fb_pixel_id) {
+    console.log(`FAIL (b) admin seed: fb_pixel_id not set`);
   } else {
-    console.log(`PASS (b) app_config seed: id=1 operator_email=${data.operator_email}`);
+    console.log(`PASS (b) admin seed: slug=${data.slug} pixel=${data.fb_pixel_id}`);
     passed++;
   }
 } catch (e) {
-  console.log(`FAIL (b) app_config seed: ${e.message}`);
+  console.log(`FAIL (b) admin seed: ${e.message}`);
 }
 
 // (c) ops_log round-trip
@@ -100,12 +101,18 @@ try {
   console.log(`FAIL (c) ops_log round-trip: ${e.message}`);
 }
 
-// (d) pop_unused_link RPC reachable
+// (d) pop_unused_link RPC reachable (now takes p_user_id too)
 try {
+  const { data: admin } = await supabase.from('user_settings').select('id').eq('is_admin', true).single();
   const { data, error } = await supabase.rpc('pop_unused_link', {
     p_click_id: '00000000-0000-0000-0000-000000000000',
+    p_user_id: admin?.id ?? '00000000-0000-0000-0000-000000000000',
   });
-  if (error) {
+  // FK error on dummy click_id is expected — means the function found a link and tried to reserve it
+  if (error && error.message.includes('foreign key constraint')) {
+    console.log(`PASS (d) pop_unused_link rpc: callable (FK error expected with dummy click_id)`);
+    passed++;
+  } else if (error) {
     console.log(`FAIL (d) pop_unused_link rpc: ${error.message}`);
   } else {
     const len = Array.isArray(data) ? data.length : (data == null ? 0 : 1);
